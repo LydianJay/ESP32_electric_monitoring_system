@@ -44,13 +44,15 @@ void setup() {
   Serial.begin(115200);
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
   //WiFiManager wm;
-
+  pinMode(27, OUTPUT);
+  digitalWrite(27, HIGH);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while(WiFi.status() != WL_CONNECTED) {
     Serial.println("Connecting...");
     delay(120);
   } 
+  digitalWrite(27, LOW);
   Serial.println("Connected To WiFi...");
   
 
