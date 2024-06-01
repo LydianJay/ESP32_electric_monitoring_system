@@ -1,9 +1,7 @@
 #include <ArduinoJson.h>
-
 #include <Wire.h> 
 #include <Arduino.h>
 #include <PZEM004Tv30.h>
-#include <WiFiManager.h>
 #include <ESP32_Supabase.h>
 #include "credentials.h"
 
@@ -43,7 +41,6 @@ void getReadings() {
 void setup() {
   Serial.begin(115200);
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
-  //WiFiManager wm;
   pinMode(27, OUTPUT);
   digitalWrite(27, HIGH);
   WiFi.mode(WIFI_STA);
@@ -56,7 +53,6 @@ void setup() {
   Serial.println("Connected To WiFi...");
   
 
-  //wm.autoConnect(WIFI_SSID, WIFI_PASSWORD);
   db.begin(SUPABASE_URL, SUPABASE_ANON_KEY);
   Serial.println("Login Result: " + String(db.login_email(EMAIL, PASS)));
   getReadings();
@@ -84,7 +80,7 @@ void loop() {
   Serial.println("Power: " + String(reading.power));
   Serial.println("Energy: " + String(reading.energy));
   Serial.println("Power Factor: " + String(reading.pf));
-
+  Serial.println(' ');
 
   JsonDocument doc;
   doc["voltage"] = reading.voltage;
