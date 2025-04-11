@@ -8,10 +8,11 @@
 #define RXD2 16
 #define TXD2 17
 
-#define SSID "GayAssFaggot"
-#define PASSWORD "Q4gp5h7o"
+constexpr uint8_t pinLED = 19;
+#define SSID "Converge_2.4GHz_2B47"
+#define PASSWORD "6ubD5HgE"
 
-const String serverIP = "192.168.254.103";
+const String serverIP = "eleksi.lyncxus.online";
 
 struct PZEMReading {
   float voltage;
@@ -29,19 +30,26 @@ void getReadings();
 void setup() {
   Serial.begin(115200);
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
+  pinMode(pinLED, OUTPUT);
+  pinMode(14, OUTPUT); digitalWrite(14, LOW);
+  digitalWrite(pinLED, HIGH);
+
   WiFi.mode(WIFI_STA);
   WiFi.begin(SSID, PASSWORD);
+
   while (WiFi.status() != WL_CONNECTED) {
     Serial.println("Connecting...");
     delay(320);
   }
+  digitalWrite(pinLED, LOW);
   Serial.println(WiFi.localIP());
+
 }
 
 void loop() {
   
   getReadings();
-  delay(2000);
+  delay(60000);
 }
 
 void getReadings() {
@@ -72,9 +80,9 @@ void getReadings() {
 
   HTTPClient http;
   String url =
-      "http://" +
+      "https://" +
       serverIP +
-      "/backend/index.php";
+      "/insert";
 
   http.begin(url);
   http.addHeader("Content-Type", "application/json");
