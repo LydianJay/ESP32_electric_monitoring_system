@@ -4,13 +4,14 @@
 #include <PZEM004Tv30.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiManager.h>
+
 
 #define RXD2 16
 #define TXD2 17
 
 constexpr uint8_t pinLED = 19;
-#define SSID "Converge_2.4GHz_2B47"
-#define PASSWORD "6ubD5HgE"
+
 
 const String serverIP = "eleksi.lyncxus.online";
 
@@ -33,17 +34,15 @@ void setup() {
   pinMode(pinLED, OUTPUT);
   pinMode(14, OUTPUT); digitalWrite(14, LOW);
   digitalWrite(pinLED, HIGH);
-
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, PASSWORD);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Connecting...");
-    delay(320);
-  }
+  WiFiManager wm;
+  wm.setWiFiAutoReconnect(true);
+  wm.autoConnect("eleksi", "admin123");
+  
+  Serial.println("Connecting...");
+  
   digitalWrite(pinLED, LOW);
   Serial.println(WiFi.localIP());
-
+  Serial.println(WiFi.macAddress());
 }
 
 void loop() {
@@ -89,5 +88,7 @@ void getReadings() {
   auto code = http.POST(jsonContent); 
   if (code != 200) {
     Serial.println("ERROR CODE: " + String(code));
+    
+    ESP.restart();
   }
 }
