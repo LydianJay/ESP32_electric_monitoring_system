@@ -13,7 +13,13 @@
 constexpr uint8_t pinLED = 19;
 
 
-const String serverIP = "eleksi.lyncxus.online";
+
+const String serverIP         = "eleksi.lyncxus.online";
+const char *ntpServer         = "time.windows.com";
+const long gmtOffset_sec      = 8 * 3600; // e.g. for Philippines (GMT+8)
+const int daylightOffset_sec  = 0;
+float energyOffset            = 11.262; // I have accidentally rest energy level so we need to add this.
+
 
 struct PZEMReading {
   float voltage;
@@ -35,8 +41,9 @@ void setup() {
   pinMode(14, OUTPUT); digitalWrite(14, LOW);
   digitalWrite(pinLED, HIGH);
   WiFiManager wm;
-  wm.setWiFiAutoReconnect(true);
-  wm.autoConnect("eleksi", "admin123");
+  if(!wm.autoConnect("eleksi", "admin123")){
+    ESP.restart();
+  }
   
   Serial.println("Connecting...");
   
@@ -47,8 +54,19 @@ void setup() {
 
 void loop() {
   
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  struct tm timeinfo;
+  if (getLocalTime(&timeinfo)) {
+    int day = timeinfo.tm_mday;
+    if (day == 1) {
+      Serial.println("Today is the first day of the month! Reset ENERGY");
+      energyOffset = 0;
+      pzem.resetEnergy();
+    }
+  }
   getReadings();
-  delay(60000);
+
+  delay(55000); // every 55 seconds
 }
 
 void getReadings() {
@@ -57,9 +75,11 @@ void getReadings() {
 
   reading.voltage = pzem.voltage();
   reading.current = pzem.current();
-  reading.power = pzem.power();
-  reading.energy = pzem.energy();
-  reading.pf = pzem.pf();
+  reading.power   = pzem.power();
+  reading.energy  = pzem.energy() + energyOffset;
+  reading.pf      = pzem.pf();
+
+
 
   if (isnan(reading.voltage) || isnan(reading.current) || isnan(reading.energy)) {
     return;
