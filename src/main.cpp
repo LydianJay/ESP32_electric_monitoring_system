@@ -21,11 +21,15 @@ const int daylightOffset_sec  = 0;
 float energyOffset            = 11.262; // I have accidentally rest energy level so we need to add this.
 
 
+uint64_t time1                = 0;
+uint64_t time2                = 0;
+constexpr uint8_t tickTime    = 55; //Every 55 seconds instead of 60 to accomodate some delays
+uint64_t elapseTime           = 0;
+
 struct PZEMReading {
   float voltage;
   float power;
   float current;
-  float pf;
   float energy;
 };
 
@@ -41,8 +45,8 @@ void setup() {
   pinMode(14, OUTPUT); digitalWrite(14, LOW);
   digitalWrite(pinLED, HIGH);
   WiFiManager wm;
-  if(!wm.autoConnect("eleksi", "admin123")){
-    ESP.restart();
+  if(!wm.autoConnect("eleksi", "admin123")) {
+    digitalWrite(pinLED, HIGH);
   }
   
   Serial.println("Connecting...");
@@ -50,23 +54,33 @@ void setup() {
   digitalWrite(pinLED, LOW);
   Serial.println(WiFi.localIP());
   Serial.println(WiFi.macAddress());
+  time1 = micros();
+  time2 = micros();
+  getReadings();
 }
 
 void loop() {
-  
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  struct tm timeinfo;
-  if (getLocalTime(&timeinfo)) {
-    int day = timeinfo.tm_mday;
-    if (day == 1) {
-      Serial.println("Today is the first day of the month! Reset ENERGY");
-      energyOffset = 0;
-      pzem.resetEnergy();
-    }
-  }
-  getReadings();
+  time1 = micros();
 
-  delay(55000); // every 55 seconds
+  if(time1 - time2 > tickTime * 1000000) {
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+    struct tm timeinfo;
+    time2 = micros();
+    if (getLocalTime(&timeinfo))
+    {
+      int day = timeinfo.tm_mday;
+      if (day == 1) // Need to reset the energy reading every month
+      {
+        // Reset the energy reading in the first day of the month 
+        // Device should run in the first day or it will not reset
+        Serial.println("Today is the first day of the month! Reset ENERGY");
+        energyOffset = 0;
+        pzem.resetEnergy();
+      }
+    }
+    getReadings();
+  }
+
 }
 
 void getReadings() {
@@ -76,12 +90,15 @@ void getReadings() {
   reading.voltage = pzem.voltage();
   reading.current = pzem.current();
   reading.power   = pzem.power();
-  reading.energy  = pzem.energy() + energyOffset;
-  reading.pf      = pzem.pf();
+  reading.energy  = pzem.energy() + energyOffset; // offset should be remove in the 2nd day next month
 
 
 
   if (isnan(reading.voltage) || isnan(reading.current) || isnan(reading.energy)) {
+    digitalWrite(pinLED, LOW);
+    delay(350);
+    digitalWrite(pinLED, HIGH);
+    delay(350);
     return;
   }
 
@@ -93,7 +110,6 @@ void getReadings() {
   doc["current"] = reading.current;
   doc["power"] = reading.power;
   doc["energy"] = reading.energy;
-  doc["power_factor"] = reading.pf;
   String jsonContent;
   serializeJson(doc, jsonContent);
 
@@ -108,7 +124,13 @@ void getReadings() {
   auto code = http.POST(jsonContent); 
   if (code != 200) {
     Serial.println("ERROR CODE: " + String(code));
+
+    for(int i = 0; i < 3; i++){
+      digitalWrite(pinLED, LOW);
+      delay(150);
+      digitalWrite(pinLED, HIGH);
+      delay(150);
+    }
     
-    ESP.restart();
   }
 }
