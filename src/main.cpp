@@ -14,11 +14,11 @@ constexpr uint8_t pinLED = 19;
 
 
 
-const String serverIP         = "eleksi.lyncxus.online";
+const String serverIP         = "eleksi.lyncxus.site";
 const char *ntpServer         = "time.windows.com";
 const long gmtOffset_sec      = 8 * 3600; // e.g. for Philippines (GMT+8)
 const int daylightOffset_sec  = 0;
-float energyOffset            = 11.262; // I have accidentally rest energy level so we need to add this.
+// float energyOffset            = 11.262; // I have accidentally rest energy level so we need to add this.
 
 
 uint64_t time1                = 0;
@@ -65,7 +65,6 @@ void loop() {
   if(time1 - time2 > tickTime * 1000000) {
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
     struct tm timeinfo;
-    time2 = micros();
     if (getLocalTime(&timeinfo))
     {
       int day = timeinfo.tm_mday;
@@ -74,11 +73,12 @@ void loop() {
         // Reset the energy reading in the first day of the month 
         // Device should run in the first day or it will not reset
         Serial.println("Today is the first day of the month! Reset ENERGY");
-        energyOffset = 0;
-        pzem.resetEnergy();
+        // energyOffset = 0;
+        // pzem.resetEnergy();
       }
     }
     getReadings();
+    time2 = micros();
   }
 
 }
@@ -90,7 +90,7 @@ void getReadings() {
   reading.voltage = pzem.voltage();
   reading.current = pzem.current();
   reading.power   = pzem.power();
-  reading.energy  = pzem.energy() + energyOffset; // offset should be remove in the 2nd day next month
+  reading.energy  = pzem.energy();
 
 
 
