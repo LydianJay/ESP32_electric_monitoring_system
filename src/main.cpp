@@ -95,9 +95,9 @@ void getReadings() {
 
 
   if (isnan(reading.voltage) || isnan(reading.current) || isnan(reading.energy)) {
-    digitalWrite(pinLED, LOW);
-    delay(350);
     digitalWrite(pinLED, HIGH);
+    delay(350);
+    digitalWrite(pinLED, LOW);
     delay(350);
     return;
   }
@@ -126,9 +126,9 @@ void getReadings() {
     Serial.println("ERROR CODE: " + String(code));
 
     for(int i = 0; i < 3; i++){
-      digitalWrite(pinLED, LOW);
-      delay(150);
       digitalWrite(pinLED, HIGH);
+      delay(150);
+      digitalWrite(pinLED, LOW);
       delay(150);
     }
     
